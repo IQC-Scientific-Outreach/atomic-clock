@@ -83,6 +83,7 @@
   .btn:focus-visible{ outline: 3px solid var(--crimson); outline-offset: 2px; }
   .check{ display:flex; align-items:center; gap:7px; font-weight:700; font-size:13px; cursor:pointer; }
   .check input{ accent-color: var(--crimson); width:16px; height:16px; margin:0; }
+  .ctl-group{ display:inline-flex; align-items:center; gap:8px 10px; }
   .btn-row{ display:flex; gap:8px 10px; flex-wrap:wrap; align-items:center; }
 
   .readout-body{ display:flex; flex-direction:column; gap: 14px; }
@@ -138,12 +139,18 @@
     <section class="panel" aria-label="Feedback loop">
       <div class="panel-head"><h2 class="panel-title">Feedback loop</h2>
         <div class="btn-row">
-          <span class="label" id="lock-label">Servo</span>
-          <div class="mode-switch" role="group" aria-labelledby="lock-label">
-            <button id="lock-off" type="button" class="active" aria-pressed="true">Off</button>
-            <button id="lock-on" type="button" aria-pressed="false">Lock</button>
+          <span class="label" id="drift-label">Drift</span>
+          <div class="mode-switch" role="group" aria-labelledby="drift-label">
+            <button id="drift-off" type="button" aria-pressed="false">Off</button>
+            <button id="drift-on" type="button" class="active" aria-pressed="true">On</button>
           </div>
-          <label class="check"><input type="checkbox" id="drift-on" checked> Drift</label>
+          <span class="ctl-group" id="servo-group">
+            <span class="label" id="lock-label">Servo</span>
+            <div class="mode-switch" role="group" aria-labelledby="lock-label">
+              <button id="lock-off" type="button" class="active" aria-pressed="true">Off</button>
+              <button id="lock-on" type="button" aria-pressed="false">Lock</button>
+            </div>
+          </span>
           <button class="btn" id="reset" type="button">Reset</button>
         </div>
       </div>
@@ -281,7 +288,7 @@ function servo(sh){
 }
 // free-running quartz: slow drift plus random walk (runs whether or not the servo is on)
 function drift(dt){
-  if (S.dragging || !$("drift-on").checked) return;
+  if (S.dragging || !driftOn) return;
   S.drift = clamp(S.drift + gauss() * 2.5 * Math.sqrt(dt), -12, 12);   // exaggerated so the free-running quartz visibly leaves the line
   S.q += S.drift * dt + gauss() * 4 * Math.sqrt(dt);
   if ((S.q > FMAX - 30 && S.drift > 0) || (S.q < FMIN + 30 && S.drift < 0)) S.drift = -S.drift;
@@ -642,6 +649,16 @@ function setSpeed(n){
   S.speed = n;
   for (const [id, v] of [["speed-1", 1], ["speed-5", 5]]){ const b = $(id); b.classList.toggle("active", n === v); b.setAttribute("aria-pressed", n === v); }
 }
+let driftOn = true;
+function setDrift(on){
+  driftOn = on;
+  for (const [id, v] of [["drift-off", false], ["drift-on", true]]){ const b = $(id); b.classList.toggle("active", on === v); b.setAttribute("aria-pressed", on === v); }
+  // the servo is only offered while there is drift to correct
+  $("servo-group").hidden = !on;
+  if (!on && S.lock) setLock(false);
+}
+$("drift-off").addEventListener("click", () => setDrift(false));
+$("drift-on").addEventListener("click", () => setDrift(true));
 $("lock-off").addEventListener("click", () => setLock(false));
 $("lock-on").addEventListener("click", () => setLock(true));
 $("speed-1").addEventListener("click", () => setSpeed(1));
