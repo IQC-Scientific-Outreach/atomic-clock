@@ -81,6 +81,8 @@
     border: 1.5px solid var(--ink); background:var(--paper); color: var(--ink); cursor:pointer; transition: transform .08s ease; }
   .btn:hover{ transform: translateY(-1px); background: var(--crimson-tint); }
   .btn:focus-visible{ outline: 3px solid var(--crimson); outline-offset: 2px; }
+  .check{ display:flex; align-items:center; gap:7px; font-weight:700; font-size:13px; cursor:pointer; }
+  .check input{ accent-color: var(--crimson); width:16px; height:16px; margin:0; }
   .btn-row{ display:flex; gap:8px 10px; flex-wrap:wrap; align-items:center; }
 
   .readout-body{ display:flex; flex-direction:column; gap: 14px; }
@@ -141,6 +143,7 @@
             <button id="lock-off" type="button" class="active" aria-pressed="true">Off</button>
             <button id="lock-on" type="button" aria-pressed="false">Lock</button>
           </div>
+          <label class="check"><input type="checkbox" id="drift-on" checked> Drift</label>
           <button class="btn" id="kick" type="button">Kick</button>
           <button class="btn" id="reset" type="button">Reset</button>
         </div>
@@ -227,7 +230,7 @@ const S = {};
 function resetState(){
   Object.assign(S, { q: DEF_Q, drift: 1.5, lock: false, mode: "free", speed: S.speed || 1, paused: S.paused || false,
     side: 1, pair: {}, shot: null, meas: [], hist: [], errNs: 0, lastP: null, searchDir: -1, dragging: false,
-    now: 0, lastHist: -1, pulseT: -10, lastCorr: 0, shown: 0 });
+    now: 0, atoms: [], fx: [], lastHit: -10, lastHist: -1, pulseT: -10, lastCorr: 0, shown: 0 });
 }
 resetState();
 
@@ -238,7 +241,7 @@ function probe(){
   return S.q + (S.lock && sh ? sh.side * DITHER : 0);
 }
 function newShot(){
-  S.shot = { t0: S.now, dur: SHOT_MS[S.speed] / 1000, side: S.lock ? S.side : 0, f: null, stage: 0, flips: new Set(), ph: [], m: 0, arrived: 0 };
+  S.shot = { t0: S.now, dur: SHOT_MS[S.speed] / 1000, side: S.lock ? S.side : 0, f: null, stage: 0, m: 0 };
 }
 function stepShot(){
   const sh = S.shot; if (!sh) return newShot();
@@ -247,9 +250,6 @@ function stepShot(){
     sh.stage = 1; sh.f = S.q + sh.side * DITHER;
     const p = P(sh.f);
     sh.m = clamp(p + gauss() * Math.sqrt(p * (1 - p) / NEFF), 0, 1);
-    const k = Math.round(sh.m * NAT), idx = [...Array(NAT).keys()];
-    for (let i = idx.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
-    idx.slice(0, k).forEach(i => { sh.flips.add(i); sh.ph.push({ i, at: 0.42 + 0.2 * Math.random(), done: false }); });
   }
   if (sh.stage < 2 && u >= 0.7){
     sh.stage = 2;
@@ -281,7 +281,7 @@ function servo(sh){
 }
 // free-running quartz: slow drift plus random walk (runs whether or not the servo is on)
 function drift(dt){
-  if (S.dragging) return;
+  if (S.dragging || !$("drift-on").checked) return;
   S.drift = clamp(S.drift + gauss() * 0.9 * Math.sqrt(dt), -4, 4);
   S.q += S.drift * dt + gauss() * 3 * Math.sqrt(dt);
   if ((S.q > FMAX - 30 && S.drift > 0) || (S.q < FMIN + 30 && S.drift < 0)) S.drift = -S.drift;
@@ -416,7 +416,7 @@ function drawDiagram(force){
   // F = 4 glows blue when the RF matches the gap
   if (a > 0.05) el("line", { x1: LX0, x2: LX1, y1: Y4, y2: Y4, stroke: "var(--rf)", "stroke-width": 12, "stroke-linecap": "round", opacity: (0.45 * a).toFixed(2) }, back);
   // static pathways (faint; the animation layer lights them up)
-  arrowXY(back, XLAS, Y4 - 4, XLAS, YE + 4, "var(--ir)", 3, { opacity: 0.35 });
+  arrowXY(back, XLAS, Y4 - 4, XLAS, YE + 4, "var(--ir)", 3, { opacity: 0.9 });
   el("text", { x: XLAS + 8, y: (YE + Y4) / 2, fill: "var(--ir)", style: "font-size:11px;font-weight:700" }, front).textContent = "852 nm";
   arrowXY(back, XRESET, Y4 + 4, XRESET, Y3 - 4, "var(--dark)", 1.6, { dash: "4 3", opacity: 0.8 });
   // RF arrow: its length is the RF frequency, drawn against the F = 3 to F = 4 gap
@@ -462,45 +462,53 @@ function photon(x0, y0, x1, y1, u, lam = 8){
   }
   return `<path d="${d}" fill="none" stroke="var(--ir)" stroke-width="2.6" stroke-linecap="round" opacity="${Math.min(1, (1 - u) * 4).toFixed(2)}"/>`;
 }
-function renderAnim(){
-  const sh = S.shot; let h = "";
-  const u = sh ? (S.now - sh.t0) / sh.dur : 0;
-  // RF pulse
-  if (sh && u > 0.05 && u < 0.34){
-    const tip = tipOf(probe()), k = Math.sin(Math.PI * (u - 0.05) / 0.29);
-    h += `<path d="${wiggle(XRF, Y3 - 3, tip.y + 8, 3, 8, -S.now * 30)}" stroke="var(--rf)" stroke-width="${(2.4 + 0.8 * k).toFixed(1)}" fill="none" opacity="${(0.4 + 0.6 * k).toFixed(2)}"/>`;
-  }
-  // probe laser
-  if (sh && u > 0.38 && u < 0.7){
-    const k = Math.sin(Math.PI * (u - 0.38) / 0.32);
-    h += `<line x1="${XLAS}" x2="${XLAS}" y1="${Y4 - 4}" y2="${YE + 14}" stroke="var(--ir)" stroke-width="${(3 + 5 * k).toFixed(1)}" opacity="${(0.25 * k).toFixed(2)}"/>`;
-    h += `<line x1="${XLAS}" x2="${XLAS}" y1="${Y4 - 4}" y2="${YE + 14}" stroke="var(--ir)" stroke-width="3" opacity="${(0.4 + 0.6 * k).toFixed(2)}"/>`;
-  }
-  // atoms
-  const dx = (DET.x0 + DET.x1) / 2, dy = DET.y1 - 10;
-  let arrived = 0;
-  for (let i = 0; i < NAT; i++){
-    const x = AX(i), flip = sh && sh.flips.has(i);
-    let y = Y3;
-    if (flip){
-      if (u < 0.2) y = Y3;
-      else if (u < 0.34) y = reduce ? Y4 : Y3 + (Y4 - Y3) * ease((u - 0.2) / 0.14);
-      else if (u < 0.76) y = Y4;
-      else if (u < 0.94) y = reduce ? Y3 : Y4 + (Y3 - Y4) * ease((u - 0.76) / 0.18);
-      if (u > 0.4 && u < 0.7) h += `<circle cx="${x}" cy="${y}" r="${(7 + 2 * Math.sin(S.now * 25 + i)).toFixed(1)}" fill="var(--ir)" opacity="0.3"/>`;
+// Each atom runs on its own clock: it meets the RF at random (exponential) times, and on each
+// interaction ends up in F = 4 with probability P(detuning). Atoms in F = 4 scatter 852 nm photons
+// at random times until they are reset to F = 3. Nothing is synchronised between atoms.
+const T = () => SHOT_MS[S.speed] / 1000;      // time unit; follows the speed setting
+const expo = m => -m * Math.log(1 - Math.random());
+function initAtoms(){ S.atoms = Array.from({ length: NAT }, (_, i) => ({ i, st: "g", y: Y3, until: S.now + expo(1.2 * T()), t0: 0, rf: -10 })); S.fx = []; }
+function stepAtoms(){
+  if (!S.atoms.length) initAtoms();
+  const t = T();
+  for (const a of S.atoms){
+    const age = S.now - a.t0;
+    if (a.st === "g"){
+      a.y = Y3;
+      if (S.now >= a.until){
+        a.rf = S.now;
+        if (Math.random() < P(probe())){ a.st = "up"; a.t0 = S.now; }
+        else a.until = S.now + expo(1.2 * t);
+      }
+    } else if (a.st === "up"){
+      const u = Math.min(1, age / (0.25 * t));
+      a.y = reduce ? Y4 : Y3 + (Y4 - Y3) * ease(u);
+      if (u >= 1){ a.st = "e"; a.t0 = S.now; a.dwell = 0.5 * t + expo(0.4 * t); a.nextPh = S.now + expo(0.2 * t); }
+    } else if (a.st === "e"){
+      a.y = Y4;
+      if (S.now >= a.nextPh){ a.nextPh = S.now + expo(0.2 * t); if (!reduce) S.fx.push({ x: AX(a.i), y: Y4 - 8, t0: S.now, life: 0.35 * Math.max(t, 0.5) }); }
+      if (age >= a.dwell){ a.st = "down"; a.t0 = S.now; }
+    } else {
+      const u = Math.min(1, age / (0.3 * t));
+      a.y = reduce ? Y3 : Y4 + (Y3 - Y4) * ease(u);
+      if (u >= 1){ a.st = "g"; a.until = S.now + expo(1.2 * t); }
     }
-    h += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="var(--ink)" stroke="var(--paper)" stroke-width="1.5"/>`;
   }
-  if (sh) for (const p of sh.ph){
-    const span = 0.16, v = (u - p.at) / span;
-    if (v >= 1 || u >= 0.7) { arrived++; continue; }
-    if (v > 0 && !reduce) h += photon(AX(p.i), Y4 - 8, dx, dy, v);
+  S.fx = S.fx.filter(f => { if (S.now - f.t0 >= f.life){ S.lastHit = S.now; return false; } return true; });
+}
+function renderAnim(){
+  let h = "";
+  const dx = (DET.x0 + DET.x1) / 2, dy = DET.y1 - 10;
+  for (const a of S.atoms){
+    const x = AX(a.i), rfAge = S.now - a.rf;
+    // brief blue ring each time this atom interacts with the RF
+    if (rfAge >= 0 && rfAge < 0.2 * T()) h += `<circle cx="${x}" cy="${Y3}" r="${(5 + 6 * rfAge / (0.2 * T())).toFixed(1)}" fill="none" stroke="var(--rf)" stroke-width="1.6" opacity="${(1 - rfAge / (0.2 * T())).toFixed(2)}"/>`;
+    if (a.st === "e") h += `<circle cx="${x}" cy="${a.y}" r="${(7 + 2 * Math.sin(S.now * 25 + a.i)).toFixed(1)}" fill="var(--ir)" opacity="0.3"/>`;
+    h += `<circle cx="${x.toFixed(1)}" cy="${a.y.toFixed(1)}" r="4" fill="var(--ink)" stroke="var(--paper)" stroke-width="1.5"/>`;
   }
-  // detector count builds up as photons arrive
-  const shown = sh && sh.ph.length ? (u >= 0.7 ? sh.m : sh.m * arrived / sh.ph.length) : (S.lastP || 0);
-  const pct = sh && u < 0.4 && sh.stage < 2 ? (S.lastP == null ? 0 : S.lastP) : shown;
-  const lit = sh && u > 0.42 && u < 0.72;
-  h += `<text x="${dx}" y="${DET.y1 - 12}" text-anchor="middle" style="font-size:15px;font-weight:700;font-family:var(--sans)" fill="${lit ? "var(--ir)" : "var(--ink)"}">${Math.round(pct * 100)}%</text>`;
+  for (const f of S.fx) h += photon(f.x, f.y, dx, dy, (S.now - f.t0) / f.life);
+  const lit = S.now - S.lastHit < 0.12;
+  h += `<text x="${dx}" y="${DET.y1 - 12}" text-anchor="middle" style="font-size:15px;font-weight:700;font-family:var(--sans)" fill="${lit ? "var(--ir)" : "var(--ink)"}">${S.lastP == null ? "—" : Math.round(S.lastP * 100) + "%"}</text>`;
   animSvg.innerHTML = h;
 }
 
@@ -639,6 +647,7 @@ function frame(ts){
     S.now += dt;
     drift(dt);
     stepShot();
+    stepAtoms();
     S.errNs += S.q / F0 * dt * 1e9;
     if (S.now - S.lastHist >= 0.1){ S.hist.push({ t: S.now, q: S.q }); S.lastHist = S.now; while (S.hist.length && S.now - S.hist[0].t > HIST_S + 1) S.hist.shift(); }
   }
