@@ -18,7 +18,7 @@
     --crimson-tint: #f3e3e6;
     --grid: #ece6d8;
     --field: #f6f4ee;
-    --ir: #8a5524;         /* 852 nm probe light and fluorescence (false colour) */
+    --ir: #c62828;         /* 852 nm probe light and fluorescence: near-IR, seen by eye as dim red */
     --rf: #2f6fb0;         /* microwave drive */
     --rf-tint: #e3edf7;
     --ok: #1f7a3a;         /* locked */
@@ -107,7 +107,7 @@
   #plot{ touch-action: pan-y; cursor: ew-resize; }
   #plot .axis, #loop .axis{ stroke: var(--ink); stroke-width: 1; }
   #plot .gridline{ stroke: var(--grid); stroke-width: 1; }
-  .rf-row{ display:grid; grid-template-columns: 130px minmax(60px,1fr) 90px; gap:8px; align-items:center; margin-top: 10px;
+  .rf-row{ display:grid; grid-template-columns: 172px minmax(60px,1fr) 90px; gap:8px; align-items:center; margin-top: 10px;
     padding: 10px 12px; background: var(--field); border: 1px solid var(--line); border-radius: 8px; }
   .rf-row .plabel{ color: var(--rf); }
   @media (max-width: 560px){ .rf-row{ grid-template-columns: minmax(0,1fr) 90px; } .rf-row .plabel{ grid-column: 1 / -1; } }
@@ -160,19 +160,12 @@
       <div class="panel-head"><h2 class="panel-title">Readout</h2><span class="pill" id="status">Free running</span></div>
       <div class="readout-body">
         <dl class="notable-list">
-          <dt>RF frequency</dt><dd class="big" id="ro-f"></dd>
+          <dt>Microwave frequency</dt><dd class="big" id="ro-f"></dd>
           <dt>Detuning</dt><dd id="ro-d"></dd>
           <dt>F = 4 signal</dt><dd id="ro-s"></dd>
-          <dt>Clock error</dt><dd id="ro-e"></dd>
-          <dt>Rate</dt><dd id="ro-r"></dd>
         </dl>
       </div>
       <div class="sim-row">
-        <span class="label" id="speed-label">Speed</span>
-        <div class="mode-switch small" role="group" aria-labelledby="speed-label">
-          <button id="speed-1" type="button" class="active" aria-pressed="true">1&times;</button>
-          <button id="speed-5" type="button" aria-pressed="false">5&times;</button>
-        </div>
         <button class="btn" id="pause" type="button" aria-pressed="false">Pause</button>
       </div>
     </section>
@@ -182,23 +175,23 @@
     <section class="panel" aria-label="Caesium resonance">
       <h2 class="sr-only">Caesium resonance</h2>
       <p class="plot-title"><b>Caesium resonance</b></p>
-      <div class="svgwrap"><svg id="plot" viewBox="0 0 640 520" role="img" aria-label="Fraction of atoms in F = 4 versus RF detuning, with the RF frequency history below"></svg></div>
+      <div class="svgwrap"><svg id="plot" viewBox="0 0 640 520" role="img" aria-label="Fraction of atoms in F = 4 versus microwave detuning, with the microwave frequency history below"></svg></div>
       <div class="rf-row">
-        <label class="plabel" for="rf-num">RF detuning <span class="unit">(Hz)</span></label>
-        <input type="range" id="rf-range" min="-500" max="500" step="0.1" aria-label="RF detuning">
+        <label class="plabel" for="rf-num">Microwave detuning <span class="unit">(Hz)</span></label>
+        <input type="range" id="rf-range" min="-500" max="500" step="0.1" aria-label="Microwave detuning">
         <input type="number" id="rf-num" min="-500" max="500" step="1">
       </div>
     </section>
     <section class="panel" aria-label="Energy-level diagram">
       <h2 class="sr-only">Energy-level diagram</h2>
       <p class="plot-title"><b>Energy levels</b></p>
-      <div class="svgwrap diag-wrap"><svg id="diagram" viewBox="0 0 480 440" role="img" aria-label="Caesium energy levels: hyperfine ground states F = 3 and F = 4, RF drive and 852 nm probe"></svg><svg id="anim" viewBox="0 0 480 440" aria-hidden="true" focusable="false"></svg></div>
+      <div class="svgwrap diag-wrap"><svg id="diagram" viewBox="0 0 480 440" role="img" aria-label="Caesium energy levels: hyperfine ground states F = 3 and F = 4, microwave drive and 852 nm (351.7 THz) probe"></svg><svg id="anim" viewBox="0 0 480 440" aria-hidden="true" focusable="false"></svg></div>
       <div class="legend" role="group" aria-label="Legend">
-        <span><svg width="26" height="10" aria-hidden="true" focusable="false"><path d="M1 5 q2 -4 4 0 t4 0 t4 0 t4 0 t4 0 t4 0" fill="none" stroke="var(--rf)" stroke-width="2"/></svg>RF, 9.19 GHz</span>
-        <span><svg width="26" height="10" aria-hidden="true" focusable="false"><line x1="1" y1="5" x2="25" y2="5" stroke="var(--ir)" stroke-width="3"/></svg>Probe laser, 852 nm</span>
+        <span><svg width="26" height="10" aria-hidden="true" focusable="false"><path d="M1 5 q2 -4 4 0 t4 0 t4 0 t4 0 t4 0 t4 0" fill="none" stroke="var(--rf)" stroke-width="2"/></svg>Microwave, 9.19 GHz</span>
+        <span><svg width="26" height="10" aria-hidden="true" focusable="false"><line x1="1" y1="5" x2="25" y2="5" stroke="var(--ir)" stroke-width="3"/></svg>Probe laser, 852 nm (351.7 THz)</span>
         <span><svg width="26" height="12" aria-hidden="true" focusable="false"><path d="M1 6 Q3.5 1.5 6 6 T11 6 T16 6 T21 6 T25 6" fill="none" stroke="var(--ir)" stroke-width="2"/></svg>Fluorescence</span>
         <span><svg width="26" height="10" aria-hidden="true" focusable="false"><line x1="1" y1="5" x2="25" y2="5" stroke="var(--dark)" stroke-width="2" stroke-dasharray="4 3"/></svg>Reset</span>
-        <span><svg width="26" height="12" aria-hidden="true" focusable="false"><circle cx="13" cy="6" r="4.5" fill="var(--ink)" stroke="var(--paper)" stroke-width="1.5"/></svg>Caesium atom</span>
+        <span><svg width="26" height="12" aria-hidden="true" focusable="false"><circle cx="13" cy="6" r="4.5" fill="var(--ink)" stroke="var(--paper)" stroke-width="1.5"/></svg>Caesium atomic energy</span>
       </div>
       <p class="sr-only" id="sr-status" role="status" aria-live="polite"></p>
     </section>
@@ -206,7 +199,7 @@
 
   </main>
 
-  <footer class="note-f">Developed by the <a href="https://uwaterloo.ca/institute-for-quantum-computing/outreach" target="_blank" rel="noopener noreferrer">Scientific Outreach Team</a> at the Institute for Quantum Computing, University of Waterloo. The development of the user interface relied on artificial intelligence tools. Please report any issues to iqc-outreach@uwaterloo.ca.</footer>
+  <footer class="note-f">Developed by the <a href="https://uwaterloo.ca/institute-for-quantum-computing/outreach" target="_blank" rel="noopener noreferrer">Scientific Outreach Team</a> at the Institute for Quantum Computing, University of Waterloo. See a related tool by the <a href="https://www.pieter-kok.staff.shef.ac.uk/interactive/fig4-5/fig4-5.html" target="_blank" rel="noopener noreferrer">University of Sheffield</a>. SI definition of the second from the <a href="https://www.bipm.org/en/publications/si-brochure" target="_blank" rel="noopener noreferrer">Bureau International des Poids et Mesures</a> (BIPM). The development of the user interface relied on artificial intelligence tools. Please report any issues to iqc-outreach@uwaterloo.ca.</footer>
 </div>
 
 <script>
@@ -227,7 +220,7 @@ const DITHER = GAMMA / 2;           // servo probes either side of the line, at 
 const GAIN = 0.42, NEFF = 300;      // servo gain; atoms per measurement (sets the shot noise)
 const SEARCH_THRESH = 0.2, SEARCH_STEP = 100;
 const FMIN = -500, FMAX = 500, NAT = 20, HIST_S = 60;
-const SHOT_MS = { 1: 1000, 5: 240 };
+const SHOT_S = 1;                   // one measurement cycle, seconds
 const DEF_Q = 320;
 const reduce = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
 const P = d => PMIN + (PMAX - PMIN) / (1 + (2 * d / GAMMA) ** 2);
@@ -235,8 +228,8 @@ function gauss(){ let u = 0; while (!u) u = Math.random(); return Math.sqrt(-2 *
 
 const S = {};
 function resetState(){
-  Object.assign(S, { q: DEF_Q, drift: 7, lock: false, mode: "free", speed: S.speed || 1, paused: S.paused || false,
-    side: 1, pair: {}, shot: null, meas: [], hist: [], errNs: 0, lastP: null, searchDir: -1, dragging: false,
+  Object.assign(S, { q: DEF_Q, drift: 7, lock: false, mode: "free", paused: S.paused || false,
+    side: 1, pair: {}, shot: null, meas: [], hist: [], lastP: null, searchDir: -1, dragging: false,
     now: 0, atoms: [], fx: [], lastHit: -10, lastHist: -1, pulseT: -10, lastCorr: 0, shown: 0 });
 }
 resetState();
@@ -248,7 +241,7 @@ function probe(){
   return S.q + (S.lock && sh ? sh.side * DITHER : 0);
 }
 function newShot(){
-  S.shot = { t0: S.now, dur: SHOT_MS[S.speed] / 1000, side: S.lock ? S.side : 0, f: null, stage: 0, m: 0 };
+  S.shot = { t0: S.now, dur: SHOT_S, side: S.lock ? S.side : 0, f: null, stage: 0, m: 0 };
 }
 function stepShot(){
   const sh = S.shot; if (!sh) return newShot();
@@ -325,7 +318,7 @@ function drawPlotStatic(){
   }
   el("line", { x1: ML, x2: ML, y1: MT, y2: PB, class: "axis" }, g);
   el("line", { x1: ML, x2: PW - MR, y1: PB, y2: PB, class: "axis" }, g);
-  el("text", { x: (ML + PW - MR) / 2, y: PB + 38, "text-anchor": "middle" }, g).textContent = "RF detuning from 9 192 631 770 Hz (Hz)";
+  el("text", { x: (ML + PW - MR) / 2, y: PB + 38, "text-anchor": "middle" }, g).textContent = "Microwave detuning from 9 192 631 770 Hz (Hz)";
   const yl = (MT + PB) / 2;
   el("text", { x: 16, y: yl, "text-anchor": "middle", transform: `rotate(-90 16 ${yl})` }, g).textContent = "Atoms in F = 4 (%)";
   // caesium marker
@@ -344,7 +337,7 @@ function drawPlotStatic(){
     el("text", { x: ML - 8, y: y + 4, "text-anchor": "end" }, g).textContent = lab;
   }
   const ty = (TT + TB) / 2;
-  el("text", { x: 16, y: ty, "text-anchor": "middle", transform: `rotate(-90 16 ${ty})` }, g).textContent = "RF history";
+  el("text", { x: 16, y: ty, "text-anchor": "middle", transform: `rotate(-90 16 ${ty})` }, g).textContent = "Microwave history";
   plotStatic = g;
   plotDyn = el("g", {}, plot);
 }
@@ -373,7 +366,7 @@ function drawPlot(){
   el("circle", { cx: x, cy: yOf(P(S.q)), r: 5, fill: "var(--paper)", stroke: "var(--rf)", "stroke-width": 2.2 }, g);
   const right = x > PW - 150;
   el("text", { x: x + (right ? -14 : 14), y: PB - 14, "text-anchor": right ? "end" : "start", style: "font-weight:700;font-size:11.5px", fill: "var(--rf)",
-    stroke: "var(--paper)", "stroke-width": 3, "paint-order": "stroke" }, g).textContent = "RF " + fmtHz(S.q);
+    stroke: "var(--paper)", "stroke-width": 3, "paint-order": "stroke" }, g).textContent = "Microwave " + fmtHz(S.q);
   el("rect", { x: x - 9, y: PB - 9, width: 18, height: 18, rx: 4, fill: "var(--rf)" }, g);
   el("path", { d: `M${x - 5} ${PB} l3 -3 v6 z M${x + 5} ${PB} l-3 -3 v6 z`, fill: "#fff" }, g);
 }
@@ -426,12 +419,13 @@ function drawDiagram(force){
   // static pathways (faint; the animation layer lights them up)
   arrowXY(back, XLAS, Y4 - 4, XLAS, YE + 4, "var(--ir)", 3, { opacity: 0.9 });
   el("text", { x: XLAS + 8, y: (YE + Y4) / 2, fill: "var(--ir)", style: "font-size:11px;font-weight:700" }, front).textContent = "852 nm";
+  el("text", { x: XLAS + 8, y: (YE + Y4) / 2 + 15, fill: "var(--ir)", style: "font-size:11px;font-weight:700" }, front).textContent = "351.7 THz";
   arrowXY(back, XRESET, Y4 + 4, XRESET, Y3 - 4, "var(--dark)", 1.6, { dash: "4 3", opacity: 0.8 });
   // RF arrow: its length is the RF frequency, drawn against the F = 3 to F = 4 gap
   el("path", { d: wiggle(XRF, Y3 - 3, tip.y + 8), stroke: "var(--rf)", "stroke-width": 2.4, fill: "none" }, back);
   el("path", { d: `M${XRF} ${tip.y} L${XRF - 6} ${tip.y + 10} L${XRF + 6} ${tip.y + 10} Z`, fill: tip.out ? "var(--paper)" : "var(--rf)", stroke: "var(--rf)", "stroke-width": 1.5 }, front);
   el("line", { x1: XRF - 12, x2: XRF + 12, y1: tip.y, y2: tip.y, stroke: "var(--rf)", "stroke-width": 1, "stroke-dasharray": "2 2" }, back);
-  el("text", { x: XRF, y: Y3 + 22, "text-anchor": "middle", fill: "var(--rf)", style: "font-size:11px;font-weight:700" }, front).textContent = "RF";
+  el("text", { x: XRF, y: Y3 + 22, "text-anchor": "middle", fill: "var(--rf)", style: "font-size:11px;font-weight:700" }, front).textContent = "Microwave";
   // hyperfine gap marker
   arrowXY(front, XGAP, Y4 + 3, XGAP, Y3 - 3, "var(--ink-soft)", 1.3, { both: true });
   el("text", { x: XGAP + 8, y: (Y4 + Y3) / 2 - 3, style: "font-size:11px;font-weight:700", fill: "var(--ink)" }, front).textContent = "9 192 631 770";
@@ -473,7 +467,7 @@ function photon(x0, y0, x1, y1, u, lam = 8){
 // Each atom runs on its own clock: it meets the RF at random (exponential) times, and on each
 // interaction ends up in F = 4 with probability P(detuning). Atoms in F = 4 scatter 852 nm photons
 // at random times until they are reset to F = 3. Nothing is synchronised between atoms.
-const T = () => SHOT_MS[S.speed] / 1000;      // time unit; follows the speed setting
+const T = () => SHOT_S;      // animation time unit
 const expo = m => -m * Math.log(1 - Math.random());
 function initAtoms(){ S.atoms = Array.from({ length: NAT }, (_, i) => ({ i, st: "g", y: Y3, until: S.now + expo(1.2 * T()), t0: 0, rf: -10 })); S.fx = []; }
 function stepAtoms(){
@@ -567,7 +561,7 @@ function drawLoop(){
   line(PATH_VQ, "var(--crimson)", 2);
   line([[236, 82], [236, 52]]);
   el("text", { x: 486, y: 94, "text-anchor": "middle", fill: "var(--ir)", style: "font-size:10px;font-weight:700" }, g).textContent = "light";
-  el("text", { x: 321, y: 76, "text-anchor": "middle", fill: "var(--rf)", style: "font-size:10px;font-weight:700" }, g).textContent = "RF";
+  el("text", { x: 321, y: 76, "text-anchor": "middle", fill: "var(--rf)", style: "font-size:10px;font-weight:700" }, g).textContent = "Microwave";
   el("text", { x: 156, y: 94, "text-anchor": "middle", style: "font-size:10px;font-weight:700" }, g).textContent = "10 MHz";
   el("text", { x: 206, y: 164, "text-anchor": "middle", fill: "var(--crimson)", style: "font-size:10px;font-weight:700" }, g).textContent = "correction";
   for (const k in B){
@@ -617,19 +611,11 @@ function fmtFreq(off){
   const v = F0 + off, i = Math.floor(v), frac = (v - i).toFixed(1).slice(1);
   return String(i).replace(/\B(?=(\d{3})+(?!\d))/g, thin) + frac + " Hz";
 }
-function fmtTime(s){
-  const a = Math.abs(s), sign = s < 0 ? "−" : "";
-  if (a < 1e-6) return sign + (a * 1e9).toFixed(1) + " ns";
-  if (a < 1e-3) return sign + (a * 1e6).toFixed(2) + " µs";
-  return sign + (a * 1e3).toFixed(2) + " ms";
-}
 let lastStatus = "";
 function readout(){
   $("ro-f").textContent = fmtFreq(S.q);
   $("ro-d").textContent = fmtHz(S.q);
   $("ro-s").textContent = S.lastP == null ? "—" : Math.round(S.lastP * 100) + "%";
-  $("ro-e").textContent = fmtTime(S.errNs * 1e-9);
-  $("ro-r").textContent = fmtTime(S.q / F0 * 86400) + " / day";
   const st = !S.lock ? ["Free running", ""] : S.mode === "search" ? ["Searching", "search"] : S.mode === "lock" ? ["Locked", "lock"] : ["Acquiring", "search"];
   const pill = $("status");
   pill.textContent = st[0]; pill.className = "pill " + st[1];
@@ -646,10 +632,6 @@ function setLock(on){
   for (const [id, v] of [["lock-off", false], ["lock-on", true]]){ const b = $(id); b.classList.toggle("active", on === v); b.setAttribute("aria-pressed", on === v); }
   render(true);
 }
-function setSpeed(n){
-  S.speed = n;
-  for (const [id, v] of [["speed-1", 1], ["speed-5", 5]]){ const b = $(id); b.classList.toggle("active", n === v); b.setAttribute("aria-pressed", n === v); }
-}
 let driftOn = true;
 function setDrift(on){
   driftOn = on;
@@ -662,8 +644,6 @@ $("drift-off").addEventListener("click", () => setDrift(false));
 $("drift-on").addEventListener("click", () => setDrift(true));
 $("lock-off").addEventListener("click", () => setLock(false));
 $("lock-on").addEventListener("click", () => setLock(true));
-$("speed-1").addEventListener("click", () => setSpeed(1));
-$("speed-5").addEventListener("click", () => setSpeed(5));
 $("pause").addEventListener("click", () => {
   S.paused = !S.paused;
   $("pause").textContent = S.paused ? "Run" : "Pause";
@@ -686,7 +666,6 @@ function frame(ts){
     drift(dt);
     stepShot();
     stepAtoms();
-    S.errNs += S.q / F0 * dt * 1e9;
     if (S.now - S.lastHist >= 0.1){ S.hist.push({ t: S.now, q: S.q }); S.lastHist = S.now; while (S.hist.length && S.now - S.hist[0].t > HIST_S + 1) S.hist.shift(); }
   }
   drawLoopDyn(); renderAnim(); drawDiagram();
