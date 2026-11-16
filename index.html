@@ -483,11 +483,31 @@ function stepAtoms(){
     } else if (a.st === "up"){
       const u = Math.min(1, age / (0.25 * t));
       a.y = reduce ? Y4 : Y3 + (Y4 - Y3) * ease(u);
-      if (u >= 1){ a.st = "e"; a.t0 = S.now; a.dwell = 0.5 * t + expo(0.4 * t); a.nextPh = S.now + expo(0.2 * t); }
+      if (u >= 1){ a.st = "e"; a.t0 = S.now; a.dwell = 0.5 * t + expo(0.4 * t); a.cyc = null; }
     } else if (a.st === "e"){
-      a.y = Y4;
-      if (S.now >= a.nextPh){ a.nextPh = S.now + expo(0.2 * t); if (!reduce) S.fx.push({ x: AX(a.i), y: Y4 - 8, t0: S.now, life: 0.35 * Math.max(t, 0.5) }); }
-      if (age >= a.dwell){ a.st = "down"; a.t0 = S.now; }
+      // optical cycling: the 852 nm laser lifts the atom from F = 4 to 6P3/2; it falls back
+      // to F = 4 by emitting a fluorescence photon, which the detector counts
+      if (!a.cyc) a.cyc = { ph: "wait", t0: S.now, d: expo(0.12 * t) };
+      const c = a.cyc, cu = Math.min(1, (S.now - c.t0) / c.d);
+      if (c.ph === "wait"){
+        a.y = Y4;
+        if (cu >= 1){
+          if (age >= a.dwell){ a.st = "down"; a.t0 = S.now; a.cyc = null; }
+          else a.cyc = { ph: "up", t0: S.now, d: 0.1 * t };
+        }
+      } else if (c.ph === "up"){
+        a.y = reduce ? YE : Y4 + (YE - Y4) * ease(cu);
+        if (cu >= 1) a.cyc = { ph: "hold", t0: S.now, d: 0.03 * t + expo(0.05 * t) };
+      } else if (c.ph === "hold"){
+        a.y = YE;
+        if (cu >= 1){
+          if (!reduce) S.fx.push({ x: AX(a.i), y: YE + 6, t0: S.now, life: 0.3 * Math.max(t, 0.5) });
+          a.cyc = { ph: "fall", t0: S.now, d: 0.12 * t };
+        }
+      } else {
+        a.y = reduce ? Y4 : YE + (Y4 - YE) * ease(cu);
+        if (cu >= 1) a.cyc = { ph: "wait", t0: S.now, d: expo(0.12 * t) };
+      }
     } else {
       const u = Math.min(1, age / (0.3 * t));
       a.y = reduce ? Y3 : Y4 + (Y3 - Y4) * ease(u);
@@ -498,17 +518,17 @@ function stepAtoms(){
 }
 function renderAnim(){
   let h = "";
-  const dx = (DET.x0 + DET.x1) / 2, dy = DET.y1 - 10;
+  const dx = DET.x0 + 4, dy = (DET.y0 + DET.y1) / 2;
   for (const a of S.atoms){
     const x = AX(a.i), rfAge = S.now - a.rf;
     // brief blue ring each time this atom interacts with the RF
     if (rfAge >= 0 && rfAge < 0.2 * T()) h += `<circle cx="${x}" cy="${Y3}" r="${(5 + 6 * rfAge / (0.2 * T())).toFixed(1)}" fill="none" stroke="var(--rf)" stroke-width="1.6" opacity="${(1 - rfAge / (0.2 * T())).toFixed(2)}"/>`;
-    if (a.st === "e") h += `<circle cx="${x}" cy="${a.y}" r="${(7 + 2 * Math.sin(S.now * 25 + a.i)).toFixed(1)}" fill="var(--ir)" opacity="0.3"/>`;
+    if (a.st === "e" && a.y < Y4 - 2) h += `<circle cx="${x}" cy="${a.y}" r="${(7 + 2 * Math.sin(S.now * 25 + a.i)).toFixed(1)}" fill="var(--ir)" opacity="0.3"/>`;
     h += `<circle cx="${x.toFixed(1)}" cy="${a.y.toFixed(1)}" r="4" fill="var(--ink)" stroke="var(--paper)" stroke-width="1.5"/>`;
   }
   for (const f of S.fx) h += photon(f.x, f.y, dx, dy, (S.now - f.t0) / f.life);
   const lit = S.now - S.lastHit < 0.12;
-  h += `<text x="${dx}" y="${DET.y1 - 12}" text-anchor="middle" style="font-size:15px;font-weight:700;font-family:var(--sans)" fill="${lit ? "var(--ir)" : "var(--ink)"}">${S.lastP == null ? "—" : Math.round(S.lastP * 100) + "%"}</text>`;
+  h += `<text x="${(DET.x0 + DET.x1) / 2}" y="${DET.y1 - 12}" text-anchor="middle" style="font-size:15px;font-weight:700;font-family:var(--sans)" fill="${lit ? "var(--ir)" : "var(--ink)"}">${S.lastP == null ? "—" : Math.round(S.lastP * 100) + "%"}</text>`;
   animSvg.innerHTML = h;
 }
 
