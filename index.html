@@ -144,7 +144,6 @@
             <button id="lock-on" type="button" aria-pressed="false">Lock</button>
           </div>
           <label class="check"><input type="checkbox" id="drift-on" checked> Drift</label>
-          <button class="btn" id="kick" type="button">Kick</button>
           <button class="btn" id="reset" type="button">Reset</button>
         </div>
       </div>
@@ -650,7 +649,6 @@ $("pause").addEventListener("click", () => {
   $("pause").textContent = S.paused ? "Run" : "Pause";
   $("pause").setAttribute("aria-pressed", S.paused);
 });
-$("kick").addEventListener("click", () => setQ(S.q + (Math.random() < 0.5 ? -1 : 1) * (180 + 120 * Math.random())));
 $("reset").addEventListener("click", () => { resetState(); setLock(false); });
 $("rf-range").addEventListener("input", e => setQ(+e.target.value));
 $("rf-num").addEventListener("change", e => setQ(+e.target.value));
