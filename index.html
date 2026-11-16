@@ -216,8 +216,8 @@ const F0 = 9192631770;              // Hz, defines the SI second
 const GAMMA = 100;                  // Hz, resonance width (FWHM)
 const PMIN = 0.03, PMAX = 0.92;     // fraction of atoms found in F = 4 far off / on resonance
 const DITHER = GAMMA / 2;           // servo probes either side of the line, at half maximum
-const GAIN = 0.32, NEFF = 300;      // servo gain; atoms per measurement (sets the shot noise)
-const SEARCH_THRESH = 0.2, SEARCH_STEP = 80;
+const GAIN = 0.42, NEFF = 300;      // servo gain; atoms per measurement (sets the shot noise)
+const SEARCH_THRESH = 0.2, SEARCH_STEP = 100;
 const FMIN = -500, FMAX = 500, NAT = 20, HIST_S = 60;
 const SHOT_MS = { 1: 1000, 5: 240 };
 const DEF_Q = 320;
@@ -227,7 +227,7 @@ function gauss(){ let u = 0; while (!u) u = Math.random(); return Math.sqrt(-2 *
 
 const S = {};
 function resetState(){
-  Object.assign(S, { q: DEF_Q, drift: 1.5, lock: false, mode: "free", speed: S.speed || 1, paused: S.paused || false,
+  Object.assign(S, { q: DEF_Q, drift: 7, lock: false, mode: "free", speed: S.speed || 1, paused: S.paused || false,
     side: 1, pair: {}, shot: null, meas: [], hist: [], errNs: 0, lastP: null, searchDir: -1, dragging: false,
     now: 0, atoms: [], fx: [], lastHit: -10, lastHist: -1, pulseT: -10, lastCorr: 0, shown: 0 });
 }
@@ -259,7 +259,8 @@ function stepShot(){
   if (u >= 1) newShot();
 }
 function servo(sh){
-  if (!S.lock) return;
+  // a cycle started before the servo was switched on has no dither side: ignore it
+  if (!S.lock || !sh.side) return;
   S.pair[sh.side] = sh.m;
   S.side = -sh.side;
   if (S.pair[1] == null || S.pair[-1] == null) return;
@@ -281,8 +282,8 @@ function servo(sh){
 // free-running quartz: slow drift plus random walk (runs whether or not the servo is on)
 function drift(dt){
   if (S.dragging || !$("drift-on").checked) return;
-  S.drift = clamp(S.drift + gauss() * 0.9 * Math.sqrt(dt), -4, 4);
-  S.q += S.drift * dt + gauss() * 3 * Math.sqrt(dt);
+  S.drift = clamp(S.drift + gauss() * 2.5 * Math.sqrt(dt), -12, 12);   // exaggerated so the free-running quartz visibly leaves the line
+  S.q += S.drift * dt + gauss() * 4 * Math.sqrt(dt);
   if ((S.q > FMAX - 30 && S.drift > 0) || (S.q < FMIN + 30 && S.drift < 0)) S.drift = -S.drift;
   S.q = clamp(S.q, FMIN, FMAX);
 }
@@ -633,6 +634,7 @@ function readout(){
 function setQ(f){ if (!isFinite(f)) return; S.q = clamp(f, FMIN, FMAX); S.pair = {}; render(true); }
 function setLock(on){
   S.lock = on; S.pair = {}; S.side = 1; S.mode = on ? "acquire" : "free"; S.searchDir = S.q > 0 ? -1 : 1;
+  if (S.shot && S.shot.stage < 2) newShot();   // start a fresh, dithered cycle straight away
   for (const [id, v] of [["lock-off", false], ["lock-on", true]]){ const b = $(id); b.classList.toggle("active", on === v); b.setAttribute("aria-pressed", on === v); }
   render(true);
 }
